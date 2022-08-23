@@ -1,8 +1,12 @@
-#test for validating api responses for the endpoint https://cars-app.qxf2.com/ 
-#test steps : 1. get data, 2. post data, 3. update data, 4. delete data
+#Test for validating api responses for the endpoint https://cars-app.qxf2.com/cars 
+#test steps : 
+#1. View existing cars list using GET method
+#2. Add new car using POST method
+#3. Update price_range of the added car using PUT method
+#4. Delete the added car (by name) using DELETE method
 
 import os, sys, requests
-#add all paths to sys.path for importing from all folders
+#add all paths to sys.path for importing methods from all directories
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.results import *
 from conf.payload import car_payload, update_car_payload
@@ -10,55 +14,63 @@ from conf.configurations import getconfig
 
 #create session
 session = requests.Session()
+
+#get input data from conf
 url = getconfig()['API']['endpoint']
 username = getconfig()['admin']['username']
 password = getconfig()['admin']['password']
 
-#get response from endpoint
-response = session.get(url=url, auth=(username, password))
+#1. get response(cars list) from endpoint using GET method
+get_response = session.get(url=url, auth=(username, password))
+
+#convert response into json format 
+json_response = get_response.json()
 
 #validate status code of the response
-# print("Status Code = ", response.status_code)
-assert response.status_code == 200
+if get_response.status_code == 200:
+    success("Successfully fetched the Cars list from endpoint")
+    info("Existing cars list = "+str(json_response)+"\n")
+elif get_response.status_code == 401:
+    error(str(get_response)+" Failed to fetch cars list from endpoint")
 
-#convert response into json format and extract the data 
-json_response = response.json()
-info(str(json_response)+"\n")
-
-#add user using post
+#2. add new car using POST method
 add_car_response = session.post(url=url+"/add", json=car_payload(), auth=(username, password))
-assert add_car_response.status_code == 200
+
+#extract car data from response dict 
 add_car_response_data = add_car_response.json()
 add_car_data = add_car_response_data['car']
 
-#get added car
+#get added car details
 get_car_response = session.get(url=url+"/"+add_car_data['name'], auth=(username, password))
 get_car_response_data = get_car_response.json()['car']
-if  get_car_response_data['name'] == car_payload()['name']:
+if add_car_response.status_code == 200 and get_car_response_data['name'] == car_payload()['name']:
     success("New car named "+ car_payload()['name']+" is added succeccfully\n")
     info("New car data = "+str(get_car_response.json())+"\n")
 else:
-    error("Failed to add new car\n")
+    error(str(get_car_response)+" Failed to add new car\n")
 
 
-#update car data by name
+#3. update car data(price_range) by name using PUT method 
 update_car_response = session.put(url=url+"/update/"+add_car_data['name'], json=update_car_payload(), auth=(username, password))
 
-#get updated car
+#get updated car details
 get_car_response = session.get(url=url+"/"+add_car_data['name'], auth=(username, password))
 get_car_response_data = get_car_response.json()['car']
-if  get_car_response_data['price_range'] == update_car_payload()['price_range']:
+if  add_car_response.status_code == 200 and get_car_response_data['price_range'] == update_car_payload()['price_range']:
     success("Car price range updated succeccfully \n")
     info("Updated car data = "+str(get_car_response.json())+"\n")
 else:
-    error("Failed to update car price range \n")
+    error(str(add_car_response)+" Failed to update car price range \n")
 
 
-#delete car by name
+#4. delete the added car by name using DELETE method
 delete_car_response = session.delete(url=url+"/remove/"+add_car_data['name'], auth=(username, password))
+
+#validate status code of response
 if delete_car_response.status_code == 200:
     success("Car named "+add_car_data['name']+" is deleted successfully\n")
 else:
-    error("Failed to delete the car\n")
+    error(str(delete_car_response)+" Failed to delete the car\n")
 
+#close session
 session.close()
