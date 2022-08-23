@@ -1,0 +1,64 @@
+#test for validating api responses for the endpoint https://cars-app.qxf2.com/ 
+#test steps : 1. get data, 2. post data, 3. update data, 4. delete data
+
+import os, sys, requests
+#add all paths to sys.path for importing from all folders
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.results import *
+from conf.payload import car_payload, update_car_payload
+from conf.configurations import getconfig
+
+#create session
+session = requests.Session()
+url = getconfig()['API']['endpoint']
+username = getconfig()['admin']['username']
+password = getconfig()['admin']['password']
+
+#get response from endpoint
+response = session.get(url=url, auth=(username, password))
+
+#validate status code of the response
+# print("Status Code = ", response.status_code)
+assert response.status_code == 200
+
+#convert response into json format and extract the data 
+json_response = response.json()
+info(str(json_response)+"\n")
+
+#add user using post
+add_car_response = session.post(url=url+"/add", json=car_payload(), auth=(username, password))
+assert add_car_response.status_code == 200
+add_car_response_data = add_car_response.json()
+add_car_data = add_car_response_data['car']
+
+#get added car
+get_car_response = session.get(url=url+"/"+add_car_data['name'], auth=(username, password))
+get_car_response_data = get_car_response.json()['car']
+if  get_car_response_data['name'] == car_payload()['name']:
+    success("New car named "+ car_payload()['name']+" is added succeccfully\n")
+    info("New car data = "+str(get_car_response.json())+"\n")
+else:
+    error("Failed to add new car\n")
+
+
+#update car data by name
+update_car_response = session.put(url=url+"/update/"+add_car_data['name'], json=update_car_payload(), auth=(username, password))
+
+#get updated car
+get_car_response = session.get(url=url+"/"+add_car_data['name'], auth=(username, password))
+get_car_response_data = get_car_response.json()['car']
+if  get_car_response_data['price_range'] == update_car_payload()['price_range']:
+    success("Car price range updated succeccfully \n")
+    info("Updated car data = "+str(get_car_response.json())+"\n")
+else:
+    error("Failed to update car price range \n")
+
+
+#delete car by name
+delete_car_response = session.delete(url=url+"/remove/"+add_car_data['name'], auth=(username, password))
+if delete_car_response.status_code == 200:
+    success("Car named "+add_car_data['name']+" is deleted successfully\n")
+else:
+    error("Failed to delete the car\n")
+
+session.close()
