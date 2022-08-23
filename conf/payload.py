@@ -1,5 +1,6 @@
-#create payload for post
+#create json payload 
 
+#payload for POST method
 def car_payload():
     car_json= {
                 'name':'Punch',
@@ -9,6 +10,7 @@ def car_payload():
                }
     return car_json
 
+#payload for PUT method
 def update_car_payload():
     car_json= {
                 'name':'Punch',
