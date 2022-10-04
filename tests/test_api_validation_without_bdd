@@ -30,7 +30,7 @@ json_response = get_response.json()
 if get_response.status_code == 200:
     success("Successfully fetched the Cars list from endpoint")
     info("Existing cars list = "+str(json_response)+"\n")
-elif get_response.status_code == 401:
+else:
     error(str(get_response)+" Failed to fetch cars list from endpoint")
 
 #2. add new car using POST method
@@ -56,11 +56,11 @@ update_car_response = session.put(url=url+"/update/"+add_car_data['name'], json=
 #get updated car details
 get_car_response = session.get(url=url+"/"+add_car_data['name'], auth=(username, password))
 get_car_response_data = get_car_response.json()['car']
-if  add_car_response.status_code == 200 and get_car_response_data['price_range'] == update_car_payload()['price_range']:
+if  update_car_response.status_code == 200 and get_car_response_data['price_range'] == update_car_payload()['price_range']:
     success("Car price range updated succeccfully \n")
     info("Updated car data = "+str(get_car_response.json())+"\n")
 else:
-    error(str(add_car_response)+" Failed to update car price range \n")
+    error(str(get_car_response)+" Failed to update car price range \n")
 
 
 #4. delete the added car by name using DELETE method
